@@ -1,6 +1,7 @@
 package router
 
 import (
+	"GoChatCraft/middlewear"
 	"GoChatCraft/service"
 	"github.com/gin-gonic/gin"
 )
@@ -10,7 +11,9 @@ func Router() *gin.Engine {
 	v1 := router.Group("v1")
 	user := v1.Group("user")
 	{
-		user.GET("/user_list", service.GetUserList)
+		user.GET("/user_list", middlewear.JWY(), service.GetUserList)
+		user.POST("/login", service.LoginByNameAndPassWord)
+		user.POST("/register", service.NewUser)
 	}
 	return router
 }
