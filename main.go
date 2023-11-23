@@ -10,7 +10,8 @@ func main() {
 	initialize.InitLogger()
 	//Initialize database.
 	initialize.InitDB()
-
+	//Initialize redis.
+	initialize.InitRedis()
 	r := router.Router()
 	err := r.Run(":8889")
 	if err != nil {

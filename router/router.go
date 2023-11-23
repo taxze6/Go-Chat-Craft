@@ -14,6 +14,7 @@ func Router() *gin.Engine {
 		user.GET("/user_list", middlewear.JWY(), service.GetUserList)
 		user.POST("/login", service.LoginByNameAndPassWord)
 		user.POST("/register", service.NewUser)
+		user.POST("/register_email_code_check", service.CheckRegisterEmailCode)
 	}
 	return router
 }

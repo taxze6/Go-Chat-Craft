@@ -129,6 +129,42 @@ func NewUser(ctx *gin.Context) {
 		})
 		return
 	}
+	err = GetEmailCode(user.Email)
+	if err != nil {
+		zap.S().Info("failed to send verification code")
+		ctx.JSON(200, gin.H{
+			"code":    0,
+			"message": "failed to send verification code!",
+			"data":    nil,
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"code":    0,
+		"message": "Verification code sent successfully.",
+		"data":    nil,
+	})
+}
+
+func CheckRegisterEmailCode(ctx *gin.Context) {
+	user := models.UserBasic{}
+	getData, _ := ctx.GetRawData()
+	var body map[string]string
+	_ = json.Unmarshal(getData, &body)
+	user.Name = body["name"]
+	user.Email = body["email"]
+	password := body["password"]
+	code := body["code"]
+	err := CheckEmailCode(user.Email, code)
+	if err != nil {
+		zap.S().Info("incorrect verification code")
+		ctx.JSON(200, gin.H{
+			"code":    0, //  0成功   -1失败
+			"message": "Incorrect verification code！",
+			"data":    nil,
+		})
+		return
+	}
 	salt := fmt.Sprintf("%d", rand.Int31())
 	//加密密码
 	user.PassWord = common.SaltPassWord(password, salt)

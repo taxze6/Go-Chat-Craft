@@ -3,6 +3,7 @@ package initialize
 import (
 	"GoChatCraft/global"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -30,4 +31,13 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func InitRedis() {
+	opt := redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", "127.0.0.1", 6379), // redis地址
+		Password: "",                                      // no password set
+		DB:       0,                                       // if you want to use default DB,set to 0
+	}
+	global.RedisDB = redis.NewClient(&opt)
 }
