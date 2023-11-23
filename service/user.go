@@ -120,6 +120,16 @@ func NewUser(ctx *gin.Context) {
 		})
 		return
 	}
+	//查询邮箱是否已被注册
+	_, err = dao.FindUserByEmailWithRegister(user.Name)
+	if err != nil {
+		ctx.JSON(200, gin.H{
+			"code":    -1,
+			"message": "The email has already registered!",
+			"data":    nil,
+		})
+		return
+	}
 
 	if password != repassword {
 		ctx.JSON(200, gin.H{

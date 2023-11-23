@@ -56,6 +56,15 @@ func FindUserByNameWithRegister(name string) (*models.UserBasic, error) {
 	return &user, nil
 }
 
+func FindUserByEmailWithRegister(email string) (*models.UserBasic, error) {
+	user := models.UserBasic{}
+	if tx := global.DB.Where("email = ?", email).First(&user); tx.RowsAffected == 1 {
+		zap.S().Info("the current email already exists")
+		return nil, errors.New("the current email already exists")
+	}
+	return &user, nil
+}
+
 func FindUserId(ID uint) (*models.UserBasic, error) {
 	user := models.UserBasic{}
 	if tx := global.DB.Where(ID).First(&user); tx.RowsAffected == 0 {
