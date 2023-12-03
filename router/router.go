@@ -15,6 +15,8 @@ func Router() *gin.Engine {
 		user.POST("/login", service.LoginByNameAndPassWord)
 		user.POST("/register", service.NewUser)
 		user.POST("/register_email_code_check", service.CheckRegisterEmailCode)
+		user.POST("/email_login", service.EmailLogin)
+		user.POST("/email_login_code_check", service.CheckLoginEmailCode)
 	}
 	return router
 }

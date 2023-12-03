@@ -5,25 +5,25 @@ import (
 	"GoChatCraft/models"
 )
 
-func GetEmailCode(mailTo string) error {
+func GetEmailCode(mailTo string, from string) error {
 	option := &models.MailOptions{
 		MailHost: "smtp.qq.com",
 		MailPort: 465,
 		MailUser: "1929509811@qq.com",
 		MailPass: "erxdycnbcbjrbcfg",
 		MailTo:   mailTo,
-		Subject:  "email code test",
+		Subject:  "chat craft email code test",
 		Body:     "",
 	}
-	err := dao.SendMailCode(option, "register", 5)
+	err := dao.SendMailCode(option, from, 1)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CheckEmailCode(email string, code string) error {
-	err := dao.ValidateMailCode(email, code, "register")
+func CheckEmailCode(email string, code string, from string) error {
+	err := dao.ValidateMailCode(email, code, from)
 	if err != nil {
 		return err
 	}

@@ -56,6 +56,15 @@ func FindUserByNameWithRegister(name string) (*models.UserBasic, error) {
 	return &user, nil
 }
 
+func FindUserByEmailWithLogin(email string) (*models.UserBasic, error) {
+	user := models.UserBasic{}
+	if tx := global.DB.Where("email = ?", email).First(&user); tx.RowsAffected == 0 {
+		zap.S().Info("couldn't find any information about this email")
+		return nil, errors.New("couldn't find any information about this email")
+	}
+	return &user, nil
+}
+
 func FindUserByEmailWithRegister(email string) (*models.UserBasic, error) {
 	user := models.UserBasic{}
 	if tx := global.DB.Where("email = ?", email).First(&user); tx.RowsAffected == 1 {

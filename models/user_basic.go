@@ -39,6 +39,7 @@ type UserResponse struct {
 	Phone      string `json:"phone"`
 	Avatar     string `json:"avatar"`
 	Motto      string `json:"motto"`
+	Identity   string `json:"identity"`
 	ClientIp   string `json:"client_ip"`
 	ClientPort string `json:"client_port"`
 }
