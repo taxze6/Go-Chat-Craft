@@ -1,0 +1,29 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "ChatCraft",
+        "title": "接囗文档",
+        "termsOfService": "https://github.com/taxze6",
+        "contact": {
+            "name": "Taxze",
+            "email": "taxze.xiaoyan@gmail.com"
+        },
+        "version": "1.0"
+    },
+    "host": "127.0.0.1:8889",
+    "paths": {
+        "/user/list": {
+            "get": {
+                "description": "用户列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "测试"
+                ],
+                "summary": "List 获取用户列表",
+                "responses": {}
+            }
+        }
+    }
+}

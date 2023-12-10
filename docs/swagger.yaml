@@ -1,0 +1,20 @@
+host: 127.0.0.1:8889
+info:
+  contact:
+    email: taxze.xiaoyan@gmail.com
+    name: Taxze
+  description: ChatCraft
+  termsOfService: https://github.com/taxze6
+  title: 接囗文档
+  version: "1.0"
+paths:
+  /user/list:
+    get:
+      consumes:
+      - application/json
+      description: 用户列表
+      responses: {}
+      summary: List 获取用户列表
+      tags:
+      - 测试
+swagger: "2.0"

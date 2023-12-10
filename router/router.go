@@ -17,6 +17,21 @@ func Router() *gin.Engine {
 		user.POST("/register_email_code_check", service.CheckRegisterEmailCode)
 		user.POST("/email_login", service.EmailLogin)
 		user.POST("/email_login_code_check", service.CheckLoginEmailCode)
+		user.POST("/find_user_with_name", middlewear.JWY(), service.FindUserWithUserName)
+	}
+	relation := v1.Group("relation").Use(middlewear.JWY())
+	{
+		relation.GET("/list", service.FriendList)
+		relation.POST("/add_username", service.AddFriendByName)
+		relation.POST("/add_userid", service.AddFriendByUserId)
+	}
+	group := v1.Group("group").Use(middlewear.JWY())
+	{
+		group.POST("/new_group", service.NewGroup)
+	}
+	message := v1.Group("message").Use(middlewear.JWY())
+	{
+		message.POST("/send_user_msg", service.SendUserMsg)
 	}
 	return router
 }

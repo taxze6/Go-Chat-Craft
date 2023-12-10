@@ -92,3 +92,15 @@ func AddFriendByName(userId uint, targetName string) (int, error) {
 	}
 	return AddFriend(userId, user.ID)
 }
+
+func AddFriendByUserId(userId uint, targetUserId uint) (int, error) {
+	user, err := FindUserId(targetUserId)
+	if err != nil {
+		return -1, errors.New("the user does not exist")
+	}
+	if user.ID == 0 {
+		zap.S().Info("user not found")
+		return -1, errors.New("the user does not exist")
+	}
+	return AddFriend(userId, user.ID)
+}

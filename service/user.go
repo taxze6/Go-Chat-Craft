@@ -15,6 +15,13 @@ import (
 	"time"
 )
 
+// GetUserList Get All User List
+//
+//	@Summary		List Get User List
+//	@Description	User List
+//	@Tags			test
+//	@Accept			json
+//	@Router			/user/list [get]
 func GetUserList(ctx *gin.Context) {
 	list, err := dao.GetUserList()
 	if err != nil {
@@ -37,45 +44,34 @@ func LoginByNameAndPassWord(ctx *gin.Context) {
 	data, err := dao.FindUserByName(name)
 	if err != nil {
 		common.RespFail(ctx.Writer, "Login Failed", "Login Failed.")
-		//ctx.JSON(200, gin.H{
-		//	"code":    -1, //0 represents success, -1 represents failure
-		//	"message": "Login Failed.",
-		//})
 		return
 	}
 	if data.Name == "" {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Username Does Not Exist.",
-		})
+		common.RespFail(ctx.Writer, "Username Does Not Exist.", "Username Does Not Exist.")
 		return
 	}
 	password, err := common.RsaDecoder(encryptionPassword)
 	if err != nil {
 		zap.S().Info("RSA Decryption Failed")
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Password parsing error!",
-		})
+		common.RespFail(ctx.Writer, "Password parsing error!", "Password parsing error!")
 		return
 	}
 	ok := common.CheckPassWord(password, data.Salt, data.PassWord)
 	if !ok {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Incorrect Password.",
-		})
+		common.RespFail(ctx.Writer, "Incorrect Password.", "Incorrect Password.")
 		return
 	}
 	userInfo, err := dao.FindUserByNameAndPwd(name, data.PassWord)
 	if err != nil {
 		zap.S().Info("Login Failed.", err)
+		common.RespFail(ctx.Writer, "Login Failed.", "Login Failed.")
 		return
 	}
 	//Using JWT for authentication.
 	token, err := middlewear.GenerateToken(userInfo.ID, "cc")
 	if err != nil {
 		zap.S().Info("Failed to Generate Token", err)
+		common.RespFail(ctx.Writer, "Failed to Generate Token.", "Failed to Generate Token.")
 		return
 	}
 	response := models.UserResponse{
@@ -89,14 +85,9 @@ func LoginByNameAndPassWord(ctx *gin.Context) {
 		ClientIp:   userInfo.ClientIp,
 		ClientPort: userInfo.ClientPort,
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "Login Successful.",
-		"data": gin.H{
-			"token": token,
-			"user":  response,
-		},
-	})
+	common.RespOk(ctx.Writer, gin.H{
+		"token": token,
+		"user":  response}, "Login Successful.")
 }
 
 func NewUser(ctx *gin.Context) {
@@ -111,81 +102,47 @@ func NewUser(ctx *gin.Context) {
 	password, err := common.RsaDecoder(encryptionPassword)
 	if err != nil {
 		zap.S().Info("RSA Decryption Failed")
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Password parsing error!",
-		})
+		common.RespFail(ctx.Writer, "Password parsing error!", "Password parsing error!")
 		return
 	}
 	repassword, err := common.RsaDecoder(encryptionRePassword)
 	if err != nil {
 		zap.S().Info("RSA Decryption Failed")
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "RePassword parsing error!",
-		})
+		common.RespFail(ctx.Writer, "RePassword parsing error!", "RePassword parsing error!")
 		return
 	}
 	if user.Name == "" || password == "" || repassword == "" {
-		ctx.JSON(200, gin.H{
-			"code":    -1, //  0成功   -1失败
-			"message": "Username or password cannot be empty！",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Username or password cannot be empty!", "Username or password cannot be empty!")
 		return
 	}
 	if user.Email == "" {
-		ctx.JSON(200, gin.H{
-			"code":    -1, //  0成功   -1失败
-			"message": "Email cannot be empty！",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Email cannot be empty!", "Email cannot be empty!")
 		return
 	}
 	//查询用户是否存在
 	_, err = dao.FindUserByNameWithRegister(user.Name)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "The user has already registered!",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "The user has already registered!", "The user has already registered!")
 		return
 	}
 	//查询邮箱是否已被注册
 	_, err = dao.FindUserByEmailWithRegister(user.Name)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "The email has already registered!",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "The email has already registered!", "The email has already registered!")
 		return
 	}
 
 	if password != repassword {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "The passwords entered do not match！",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "The passwords entered do not match!", "The passwords entered do not match!")
 		return
 	}
 	err = GetEmailCode(user.Email, global.Register)
 	if err != nil {
 		zap.S().Info("failed to send verification code")
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "failed to send verification code!",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "failed to send verification code!", "failed to send verification code!")
 		return
 	}
-	ctx.JSON(200, gin.H{
-		"code":    0,
-		"message": "Verification code sent successfully.",
-		"data":    "Verification code sent successfully.",
-	})
+	common.RespOk(ctx.Writer, "Verification code sent successfully.", "Verification code sent successfully.")
 }
 
 func CheckRegisterEmailCode(ctx *gin.Context) {
@@ -200,11 +157,7 @@ func CheckRegisterEmailCode(ctx *gin.Context) {
 	err := CheckEmailCode(user.Email, code, global.Register)
 	if err != nil {
 		zap.S().Info("incorrect verification code")
-		ctx.JSON(200, gin.H{
-			"code":    0, //  0成功   -1失败
-			"message": "Incorrect verification code！",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Incorrect verification code!", "Incorrect verification code!")
 		return
 	}
 	salt := fmt.Sprintf("%d", rand.Int31())
@@ -224,6 +177,7 @@ func CheckRegisterEmailCode(ctx *gin.Context) {
 	token, err := middlewear.GenerateToken(info.ID, "cc")
 	if err != nil {
 		zap.S().Info("Failed to Generate Token", err)
+		common.RespFail(ctx.Writer, "Failed to Generate Token", "Failed to Generate Token")
 		return
 	}
 	userInfo := models.UserResponse{
@@ -237,14 +191,10 @@ func CheckRegisterEmailCode(ctx *gin.Context) {
 		ClientIp:   info.ClientIp,
 		ClientPort: info.ClientPort,
 	}
-	ctx.JSON(200, gin.H{
-		"code":    0, //  0成功   -1失败
-		"message": "New user added successfully！",
-		"data": gin.H{
-			"token": token,
-			"user":  userInfo,
-		},
-	})
+	common.RespOk(ctx.Writer, gin.H{
+		"token": token,
+		"user":  userInfo,
+	}, "New user added successfully！")
 }
 
 func EmailLogin(ctx *gin.Context) {
@@ -254,28 +204,16 @@ func EmailLogin(ctx *gin.Context) {
 	email := body["email"]
 	_, err := dao.FindUserByEmailWithLogin(email)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Couldn't find any information about this email.",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Couldn't find any information about this email.", "Couldn't find any information about this email.")
 		return
 	}
 	err = GetEmailCode(email, global.LoginEmail)
 	if err != nil {
 		zap.S().Info("failed to send verification code")
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "failed to send verification code!",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "failed to send verification code!", "failed to send verification code!")
 		return
 	}
-	ctx.JSON(200, gin.H{
-		"code":    0,
-		"message": "Verification code sent successfully.",
-		"data":    "Verification code sent successfully.",
-	})
+	common.RespOk(ctx.Writer, "Verification code sent successfully.", "Verification code sent successfully.")
 }
 
 func CheckLoginEmailCode(ctx *gin.Context) {
@@ -287,21 +225,13 @@ func CheckLoginEmailCode(ctx *gin.Context) {
 	err := CheckEmailCode(email, code, global.LoginEmail)
 	if err != nil {
 		zap.S().Info("incorrect verification code")
-		ctx.JSON(200, gin.H{
-			"code":    -1, //  0成功   -1失败
-			"message": "Incorrect verification code！",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Incorrect verification code!", "Incorrect verification code!")
 		return
 	}
 	//查询用户数据
 	user, err := dao.FindUserByEmailWithLogin(email)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    -1,
-			"message": "Couldn't find any information about this email.",
-			"data":    nil,
-		})
+		common.RespFail(ctx.Writer, "Couldn't find any information about this email.", "Couldn't find any information about this email.")
 		return
 	}
 	t := time.Now()
@@ -312,6 +242,7 @@ func CheckLoginEmailCode(ctx *gin.Context) {
 	token, err := middlewear.GenerateToken(user.ID, "cc")
 	if err != nil {
 		zap.S().Info("Failed to Generate Token", err)
+		common.RespFail(ctx.Writer, "Failed to Generate Token", "Failed to Generate Token")
 		return
 	}
 	userInfo := models.UserResponse{
@@ -325,12 +256,32 @@ func CheckLoginEmailCode(ctx *gin.Context) {
 		ClientIp:   user.ClientIp,
 		ClientPort: user.ClientPort,
 	}
-	ctx.JSON(200, gin.H{
-		"code":    0, //  0成功   -1失败
-		"message": "Login Successful.",
-		"data": gin.H{
-			"token": token,
-			"user":  userInfo,
-		},
-	})
+	common.RespOk(ctx.Writer, gin.H{
+		"token": token,
+		"user":  userInfo,
+	}, "Login Successful.")
+}
+
+func FindUserWithUserName(ctx *gin.Context) {
+	getData, _ := ctx.GetRawData()
+	var body map[string]string
+	_ = json.Unmarshal(getData, &body)
+	name := body["name"]
+	userInfo, err := dao.FindUserByName(name)
+	if err != nil {
+		common.RespFail(ctx.Writer, "couldn't find any information about this user", "couldn't find any information about this user")
+		return
+	}
+	reUserInfo := models.UserResponse{
+		ID:         userInfo.ID,
+		Name:       userInfo.Name,
+		Email:      userInfo.Email,
+		Phone:      userInfo.Phone,
+		Avatar:     userInfo.Avatar,
+		Motto:      userInfo.Motto,
+		Identity:   userInfo.Identity,
+		ClientIp:   userInfo.ClientIp,
+		ClientPort: userInfo.ClientPort,
+	}
+	common.RespOk(ctx.Writer, reUserInfo, "The user has been found.")
 }

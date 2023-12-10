@@ -47,23 +47,51 @@ func AddFriendByName(ctx *gin.Context) {
 		return
 	}
 	tar := body["targetName"]
+	code, err := dao.AddFriendByName(uint(userId), tar)
 	if err != nil {
-		code, err := dao.AddFriendByName(uint(userId), tar)
-		if err != nil {
-			var res string
-			switch code {
-			case -1:
-				res = err.Error()
-			case 0:
-				res = "The friend already exists."
-			case -2:
-				res = "You cannot add yourself."
-			default:
-				res = "Unknown error."
-			}
-			common.RespFail(ctx.Writer, res, res)
-			return
+		var res string
+		switch code {
+		case -1:
+			res = err.Error()
+		case 0:
+			res = "The friend already exists."
+		case -2:
+			res = "You cannot add yourself."
+		default:
+			res = "Unknown error."
 		}
+		common.RespFail(ctx.Writer, res, res)
+		return
+	}
+	common.RespOk(ctx.Writer, "Successfully added friend.", "Successfully added friend.")
+}
+
+func AddFriendByUserId(ctx *gin.Context) {
+	getData, _ := ctx.GetRawData()
+	var body map[string]int
+	_ = json.Unmarshal(getData, &body)
+	user := ctx.GetHeader("UserId")
+	userId, err := strconv.Atoi(user)
+	if err != nil {
+		zap.S().Info("failed to convert data type", err)
+		return
+	}
+	tar := body["targetUserId"]
+	code, err := dao.AddFriendByUserId(uint(userId), uint(tar))
+	if err != nil {
+		var res string
+		switch code {
+		case -1:
+			res = err.Error()
+		case 0:
+			res = "The friend already exists."
+		case -2:
+			res = "You cannot add yourself."
+		default:
+			res = "Unknown error."
+		}
+		common.RespFail(ctx.Writer, res, res)
+		return
 	}
 	common.RespOk(ctx.Writer, "Successfully added friend.", "Successfully added friend.")
 }
