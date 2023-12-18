@@ -11,7 +11,7 @@ import (
 )
 
 func FriendList(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Request.FormValue("userId"))
+	id, _ := strconv.Atoi(ctx.GetHeader("UserId"))
 	users, err := dao.FriendList(uint(id))
 	if err != nil {
 		zap.S().Info("failed to retrieve friend list.", err)

@@ -9,7 +9,7 @@ import (
 )
 
 func SendUserMsg(ctx *gin.Context) {
-	models.Chat(ctx.Writer, ctx.Request)
+	models.Chat(ctx.Writer, ctx.Request, ctx.GetHeader("UserId"))
 }
 
 func GetRedisMsg(ctx *gin.Context) {

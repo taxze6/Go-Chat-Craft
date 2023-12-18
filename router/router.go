@@ -21,7 +21,7 @@ func Router() *gin.Engine {
 	}
 	relation := v1.Group("relation").Use(middlewear.JWY())
 	{
-		relation.GET("/list", service.FriendList)
+		relation.POST("/list", service.FriendList)
 		relation.POST("/add_username", service.AddFriendByName)
 		relation.POST("/add_userid", service.AddFriendByUserId)
 	}
@@ -31,7 +31,8 @@ func Router() *gin.Engine {
 	}
 	message := v1.Group("message").Use(middlewear.JWY())
 	{
-		message.POST("/send_user_msg", service.SendUserMsg)
+		message.GET("/send_user_msg", service.SendUserMsg)
+		message.POST("/get_all_msg", service.GetRedisMsg)
 	}
 	return router
 }

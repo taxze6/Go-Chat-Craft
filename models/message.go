@@ -17,13 +17,13 @@ import (
 
 type Message struct {
 	Model
-	FormId   int64 `json:"userId"`
-	TargetId int64 `json:"targetId"`
-	Type     int
-	Media    int
-	Content  string
-	Pic      string `json:"url"`
-	Url      string
+	FormId   int64  `json:"userId"`
+	TargetId int64  `json:"targetId"`
+	Type     int    `json:"type"`
+	Media    int    `json:"media"`
+	Content  string `json:"content"`
+	Pic      string `json:"pic"`
+	Url      string `json:"url"`
 	Desc     string
 	Amount   int
 }
@@ -42,9 +42,9 @@ type Node struct {
 var clientMap map[int64]*Node = make(map[int64]*Node) //Mapping relationship table (the key of the map is the userId, and the value is the Node, a global map shared by all coroutines)
 var rwlocker sync.RWMutex                             //Read-write lock is needed to ensure thread safety when binding a Node.
 
-func Chat(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	Id := query.Get("userId")
+func Chat(w http.ResponseWriter, r *http.Request, Id string) {
+	//query := r.URL.Query()
+	//Id := query.Get("userId")
 	userId, err := strconv.ParseInt(Id, 10, 64)
 	if err != nil {
 		zap.S().Info("Type conversion failed", err)
@@ -77,6 +77,9 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 
 	//Service receives message
 	go recProc(node)
+
+	//test
+	sendMsg(userId, []byte("Welcome to the chat."))
 }
 
 // sendProc retrieves information from the node and writes it into the WebSocket.
@@ -89,6 +92,7 @@ func sendProc(node *Node) {
 				zap.S().Info("Failed to write the message", err)
 				return
 			}
+			fmt.Println("The data has been successfully sent through the socket.")
 		}
 	}
 }
@@ -116,6 +120,7 @@ func brodMsg(data []byte) {
 
 func init() {
 	go UdpSendProc()
+	go UdpRecProc()
 }
 
 // The UdpSendProc completes UDP data sending by connecting to the UDP server and writing the message body from the global channel to the UDP server.
@@ -138,6 +143,7 @@ func UdpSendProc() {
 				zap.S().Info("Failed to write UDP message.", err)
 				return
 			}
+			fmt.Println("The data has been successfully sent to the UDP server:", string(data))
 		}
 	}
 }
@@ -160,6 +166,7 @@ func UdpRecProc() {
 			zap.S().Info("Failed to read UDP data.", err)
 			return
 		}
+		fmt.Println("UDP server receives UDP data:", buf[0:n])
 		dispatch(buf[0:n])
 	}
 }
@@ -173,6 +180,7 @@ func dispatch(data []byte) {
 		return
 	}
 
+	fmt.Println("Parse the data:", "msg.FormId", msg.FormId, "targetId:", msg.TargetId, "type:", msg.Type)
 	switch msg.Type {
 	case 1:
 		sendMsg(msg.TargetId, data)

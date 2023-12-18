@@ -33,7 +33,7 @@ func RespList(w http.ResponseWriter, code int, data interface{}, message string,
 	w.WriteHeader(http.StatusOK)
 	h := H{
 		Code:    code,
-		Rows:    data,
+		Data:    data,
 		Message: message,
 		Total:   total,
 	}
