@@ -13,19 +13,20 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Message struct {
 	Model
-	FormId   int64  `json:"userId"`
-	TargetId int64  `json:"targetId"`
-	Type     int    `json:"type"`
-	Media    int    `json:"media"`
-	Content  string `json:"content"`
-	Pic      string `json:"pic"`
-	Url      string `json:"url"`
-	Desc     string
-	Amount   int
+	FormId      int64  `json:"userId"`
+	TargetId    int64  `json:"targetId"`
+	Type        int    `json:"type"`
+	ContentType int    `json:"contentType"`
+	Content     string `json:"content"`
+	Pic         string `json:"pic"`
+	Url         string `json:"url"`
+	Desc        string
+	Amount      int
 }
 
 func (m *Message) MsgTableName() string {
@@ -79,7 +80,7 @@ func Chat(w http.ResponseWriter, r *http.Request, Id string) {
 	go recProc(node)
 
 	//test
-	sendMsg(userId, []byte("Welcome to the chat."))
+	sendMsgAndSave(userId, []byte("{\"userId\":7,\"targetId\":1,\"type\":101,\"contentType\":101,\"content\":\"hello\",\"CreateAt\":\"2023-12-20 11:13:56.71999 +0800 CST\"}"))
 }
 
 // sendProc retrieves information from the node and writes it into the WebSocket.
@@ -173,36 +174,48 @@ func UdpRecProc() {
 
 // Dispatch: Parsing the message and determining the chat type.
 func dispatch(data []byte) {
+	// 更新 data 中的时间字段
+	var jsonData map[string]interface{}
+	err := json.Unmarshal(data, &jsonData)
+	if err != nil {
+		zap.S().Info("Failed to parse JSON data.", err)
+		return
+	}
+	jsonData["createAt"] = time.Now()
+	updatedData, err := json.Marshal(jsonData)
+	if err != nil {
+		zap.S().Info("Failed to marshal JSON data.", err)
+		return
+	}
 	msg := Message{}
-	err := json.Unmarshal(data, &msg)
+	err = json.Unmarshal(updatedData, &msg)
 	if err != nil {
 		zap.S().Info("Failed to parse the message.", err)
 		return
 	}
-
-	fmt.Println("Parse the data:", "msg.FormId", msg.FormId, "targetId:", msg.TargetId, "type:", msg.Type)
+	fmt.Println("Parse the data:", "msg.FormId", msg.FormId, "targetId:", msg.TargetId, "type:", msg.Type, "time:", msg.CreateAt)
 	switch msg.Type {
 	case 1:
-		sendMsg(msg.TargetId, data)
+		sendMsgAndSave(msg.TargetId, updatedData)
 	case 2:
-		sendGroupMsg(uint(msg.FormId), uint(msg.TargetId), data)
+		sendGroupMsg(uint(msg.FormId), uint(msg.TargetId), updatedData)
 	}
 }
 
 // Sending a message to the user in a private chat.
-func sendMsg(id int64, msg []byte) {
-	rwlocker.Lock()
-	node, ok := clientMap[id]
-	rwlocker.Unlock()
-	if !ok {
-		zap.S().Info("There is no corresponding node for the userID.")
-		return
-	}
-	zap.S().Info("targetID:", id, "node:", node)
-	if ok {
-		node.DataQueue <- msg
-	}
-}
+//func sendMsg(id int64, msg []byte) {
+//	rwlocker.Lock()
+//	node, ok := clientMap[id]
+//	rwlocker.Unlock()
+//	if !ok {
+//		zap.S().Info("There is no corresponding node for the userID.")
+//		return
+//	}
+//	zap.S().Info("targetID:", id, "node:", node)
+//	if ok {
+//		node.DataQueue <- msg
+//	}
+//}
 
 func sendGroupMsg(formId, target uint, data []byte) (int, error) {
 	//Get all users in the group, and then send a message to each user except yourself.
@@ -240,6 +253,7 @@ func sendMsgAndSave(userId int64, msg []byte) {
 	} else {
 		key = "msg_" + targetIdStr + "_" + userIdStr
 	}
+	fmt.Println(key)
 	//
 	res, err := global.RedisDB.ZRevRange(ctx, key, 0, -1).Result()
 	if err != nil {
@@ -270,6 +284,7 @@ func RedisMsg(userIdA int64, userIdB int64, start int64, end int64, isRev bool) 
 	} else {
 		key = "msg_" + userIdStr + "_" + targetIdStr
 	}
+	fmt.Println(key)
 	var rels []string
 	var err error
 	if isRev {

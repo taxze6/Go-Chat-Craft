@@ -32,7 +32,7 @@ func Router() *gin.Engine {
 	message := v1.Group("message").Use(middlewear.JWY())
 	{
 		message.GET("/send_user_msg", service.SendUserMsg)
-		message.POST("/get_all_msg", service.GetRedisMsg)
+		message.POST("/get_redis_msg", service.GetRedisMsg)
 	}
 	return router
 }
