@@ -9,6 +9,9 @@ import (
 func Router() *gin.Engine {
 	router := gin.Default()
 	v1 := router.Group("v1")
+	//assets
+	router.Static("/assets", "assets/")
+
 	user := v1.Group("user")
 	{
 		user.GET("/user_list", middlewear.JWY(), service.GetUserList)
@@ -33,6 +36,11 @@ func Router() *gin.Engine {
 	{
 		message.GET("/send_user_msg", service.SendUserMsg)
 		message.POST("/get_redis_msg", service.GetRedisMsg)
+	}
+
+	upload := v1.Group("upload").Use(middlewear.JWY())
+	{
+		upload.POST("/image", service.Image)
 	}
 	return router
 }
