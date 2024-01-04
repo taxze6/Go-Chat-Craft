@@ -81,7 +81,7 @@ func Chat(w http.ResponseWriter, r *http.Request, Id string) {
 	go recProc(node)
 
 	//test
-	sendMsgAndSave(userId, []byte("{\"msgId\":\"11111\",\"userId\":7,\"targetId\":1,\"type\":101,\"contentType\":101,\"content\":\"hello\",\"CreateAt\":\"2023-12-20 11:13:56.71999 +0800 CST\"}"))
+	//sendMsgAndSave(userId, []byte("{\"msgId\":\"11111\",\"userId\":7,\"targetId\":1,\"type\":101,\"contentType\":101,\"content\":\"hello\",\"CreateAt\":\"2023-12-20 11:13:56.71999 +0800 CST\"}"))
 }
 
 // sendProc retrieves information from the node and writes it into the WebSocket.
