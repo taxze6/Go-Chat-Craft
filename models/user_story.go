@@ -4,7 +4,7 @@ type UserStory struct {
 	Model
 	OwnerId uint   `json:"owner_id"`
 	Content string `json:"content"`
-	media   string `json:"media"`
+	Media   string `json:"media"`
 	Type    int    `json:"type"`
 }
 
