@@ -8,6 +8,11 @@ type UserStory struct {
 	Type    int    `json:"type"`
 }
 
+type UserShowStoryListResponse struct {
+	StoryList *[]UserStory
+	Count     int
+}
+
 func (table *UserStory) UserStoryTableName() string {
 	return "user_story"
 }

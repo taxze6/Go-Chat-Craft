@@ -46,13 +46,13 @@ func GetUserShowStoryList(userId uint) (*[]models.UserStory, int, error) {
 	return &latestStories, likeStoryCount, nil
 }
 
-func AddStory(story *models.UserStory) error {
+func AddStory(story *models.UserStory) (*models.UserStory, error) {
 	tx := global.DB.Create(&story)
 	if tx.RowsAffected == 0 {
 		zap.S().Info("failed to add a new story")
-		return errors.New("failed to add a new story")
+		return nil, errors.New("failed to add a new story")
 	}
-	return nil
+	return story, nil
 }
 
 func AddStoryLike(likeStory *models.UserStoryLike) error {
@@ -64,7 +64,7 @@ func AddStoryLike(likeStory *models.UserStoryLike) error {
 	return nil
 }
 
-func AddStoryComment(commentStory *models.UserStoryLike) error {
+func AddStoryComment(commentStory *models.UserStoryComment) error {
 	tx := global.DB.Create(&commentStory)
 	if tx.RowsAffected == 0 {
 		zap.S().Info("failed to add a new story like")
