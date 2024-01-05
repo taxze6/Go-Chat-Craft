@@ -44,17 +44,6 @@ type UserResponse struct {
 	ClientPort string `json:"client_port"`
 }
 
-type UserCollect struct {
-	Model
-	CollectOwnerId uint   `json:"collect_owner_id"`
-	CollectContent string `json:"collect_content"`
-	Type           int    `json:"type"`
-}
-
 func (table *UserBasic) UserTableName() string {
 	return "user_basic"
-}
-
-func (table *UserCollect) UserCollectTableName() string {
-	return "user_collect"
 }

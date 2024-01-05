@@ -36,6 +36,6 @@ func Image(ctx *gin.Context) {
 	if err != nil {
 		common.RespFail(w, err.Error(), "Upload failed.")
 	}
-	url := "http://192.168.31.135:8889/assets/upload/" + fileName
+	url := "http://192.168.31.123:8889/assets/upload/" + fileName
 	common.RespOk(w, url, "Sent successfully.")
 }
