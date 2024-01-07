@@ -21,17 +21,18 @@ func GetUserShowStoryList(userId uint) (*[]models.UserStory, int, error) {
 	story := make([]models.UserStory, 0)
 	if tx := global.DB.Where("owner_id = ?", userId).Find(&story); tx.RowsAffected == 0 {
 		zap.S().Info("story data found")
-		return nil, 0, errors.New("story data found")
+		//return nil, 0, errors.New("story data found")
 	}
 	likeStory := make([]models.UserStoryLike, 0)
 	for _, s := range story {
 		currentLikeStory := make([]models.UserStoryLike, 0)
 		if tx := global.DB.Where("user_story_id = ?", s.ID).Find(&currentLikeStory); tx.RowsAffected == 0 {
 			zap.S().Info("story like data found")
-			return nil, 0, errors.New("story like data found")
+			//return nil, 0, errors.New("story like data found")
+		} else {
+			//...Used to pass the elements of a slice or array to a function one by one.
+			likeStory = append(likeStory, currentLikeStory...)
 		}
-		//...Used to pass the elements of a slice or array to a function one by one.
-		likeStory = append(likeStory, currentLikeStory...)
 	}
 	likeStoryCount := len(likeStory)
 	//Get the latest three data of story.

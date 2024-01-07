@@ -27,9 +27,9 @@ func GetStoryList(ctx *gin.Context) {
 
 func GetUserShowStoryList(ctx *gin.Context) {
 	getData, _ := ctx.GetRawData()
-	var body map[string]string
+	var body map[string]int
 	_ = json.Unmarshal(getData, &body)
-	userId, _ := strconv.Atoi(body["userId"])
+	userId := body["userId"]
 	storyList, count, err := dao.GetUserShowStoryList(uint(userId))
 	if err != nil {
 		common.RespFail(ctx.Writer, "couldn't find any information about this user story", "couldn't find any information about this user story")
