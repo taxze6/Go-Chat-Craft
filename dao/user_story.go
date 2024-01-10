@@ -17,13 +17,15 @@ func GetStoryList(userId uint, page int, pageSize int) (*[]models.UserStory, err
 	return &story, nil
 }
 
-func GetUserShowStoryList(userId uint) (*[]models.UserStory, int, error) {
+func GetUserShowStoryList(userId uint) (*[]models.ResponseUserStory, int, error) {
 	story := make([]models.UserStory, 0)
 	if tx := global.DB.Where("owner_id = ?", userId).Find(&story); tx.RowsAffected == 0 {
 		zap.S().Info("story data found")
 		//return nil, 0, errors.New("story data found")
 	}
 	likeStory := make([]models.UserStoryLike, 0)
+	responseStory := make([]models.ResponseUserStory, 0)
+
 	for _, s := range story {
 		currentLikeStory := make([]models.UserStoryLike, 0)
 		if tx := global.DB.Where("user_story_id = ?", s.ID).Find(&currentLikeStory); tx.RowsAffected == 0 {
@@ -32,6 +34,10 @@ func GetUserShowStoryList(userId uint) (*[]models.UserStory, int, error) {
 		} else {
 			//...Used to pass the elements of a slice or array to a function one by one.
 			likeStory = append(likeStory, currentLikeStory...)
+			responseStory = append(responseStory, models.ResponseUserStory{
+				Story:      s,
+				StoryLikes: &currentLikeStory,
+			})
 		}
 	}
 	likeStoryCount := len(likeStory)
@@ -44,7 +50,7 @@ func GetUserShowStoryList(userId uint) (*[]models.UserStory, int, error) {
 		latestStories = make([]models.UserStory, 3)
 		copy(latestStories, story[len(story)-3:])
 	}
-	return &latestStories, likeStoryCount, nil
+	return &responseStory, likeStoryCount, nil
 }
 
 func AddStory(story *models.UserStory) (*models.UserStory, error) {

@@ -8,8 +8,12 @@ type UserStory struct {
 	Type    int    `json:"type"`
 }
 
+type ResponseUserStory struct {
+	Story      UserStory        `json:"story"`
+	StoryLikes *[]UserStoryLike `json:"story_likes"`
+}
 type UserShowStoryListResponse struct {
-	StoryList *[]UserStory
+	StoryList *[]ResponseUserStory
 	Count     int
 }
 
