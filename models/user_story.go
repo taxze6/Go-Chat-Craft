@@ -9,8 +9,9 @@ type UserStory struct {
 }
 
 type ResponseUserStory struct {
-	Story      UserStory        `json:"story"`
-	StoryLikes *[]UserStoryLike `json:"story_likes"`
+	Story         UserStory           `json:"story"`
+	StoryLikes    *[]UserStoryLike    `json:"story_likes"`
+	StoryComments *[]UserStoryComment `json:"story_comments"`
 }
 type UserShowStoryListResponse struct {
 	StoryList *[]ResponseUserStory

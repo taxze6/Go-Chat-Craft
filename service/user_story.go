@@ -96,10 +96,10 @@ func AddStoryComment(ctx *gin.Context) {
 		CommentContent: commentContent,
 		Type:           commentType,
 	}
-	err := dao.AddStoryComment(userStoryComment)
+	comment, err := dao.AddStoryComment(userStoryComment)
 	if err != nil {
 		common.RespFail(ctx.Writer, "Failed to comment the post!", "Failed to comment the post!")
 		return
 	}
-	common.RespOk(ctx.Writer, "Successfully comment the post!", "Successfully comment the post!")
+	common.RespOk(ctx.Writer, comment, "Successfully comment the post!")
 }

@@ -35,9 +35,15 @@ func GetUserShowStoryList(userId uint) (*[]models.ResponseUserStory, int, error)
 			//...Used to pass the elements of a slice or array to a function one by one.
 			likeStory = append(likeStory, currentLikeStory...)
 		}
+		currentCommentStory := make([]models.UserStoryComment, 0)
+		if tx := global.DB.Where("user_story_id = ?", s.ID).Find(&currentCommentStory); tx.RowsAffected == 0 {
+			zap.S().Info("story like data found")
+			//return nil, 0, errors.New("story like data found")
+		}
 		responseStory = append(responseStory, models.ResponseUserStory{
-			Story:      s,
-			StoryLikes: &currentLikeStory,
+			Story:         s,
+			StoryLikes:    &currentLikeStory,
+			StoryComments: &currentCommentStory,
 		})
 	}
 	likeStoryCount := len(likeStory)
@@ -79,11 +85,13 @@ func AddOrRemoveStoryLike(likeStory *models.UserStoryLike) error {
 	return nil
 }
 
-func AddStoryComment(commentStory *models.UserStoryComment) error {
-	tx := global.DB.Create(&commentStory)
+func AddStoryComment(commentStory *models.UserStoryComment) (*models.UserStoryComment, error) {
+	comment := models.UserStoryComment{}
+	tx := global.DB.Create(&commentStory).Where("user_story_id = ? And comment_owner_id = ?", commentStory.UserStoryId, commentStory.CommentOwnerId).
+		First(&comment)
 	if tx.RowsAffected == 0 {
 		zap.S().Info("failed to add a new story like")
-		return errors.New("failed to add a new story like")
+		return nil, errors.New("failed to add a new story like")
 	}
-	return nil
+	return &comment, nil
 }
