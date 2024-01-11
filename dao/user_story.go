@@ -34,23 +34,23 @@ func GetUserShowStoryList(userId uint) (*[]models.ResponseUserStory, int, error)
 		} else {
 			//...Used to pass the elements of a slice or array to a function one by one.
 			likeStory = append(likeStory, currentLikeStory...)
-			responseStory = append(responseStory, models.ResponseUserStory{
-				Story:      s,
-				StoryLikes: &currentLikeStory,
-			})
 		}
+		responseStory = append(responseStory, models.ResponseUserStory{
+			Story:      s,
+			StoryLikes: &currentLikeStory,
+		})
 	}
 	likeStoryCount := len(likeStory)
 	//Get the latest three data of story.
-	var latestStories []models.UserStory
-	if len(story) <= 3 {
-		latestStories = make([]models.UserStory, len(story))
-		copy(latestStories, story)
+	var latestStories []models.ResponseUserStory
+	if len(responseStory) <= 3 {
+		latestStories = make([]models.ResponseUserStory, len(responseStory))
+		copy(latestStories, responseStory)
 	} else {
-		latestStories = make([]models.UserStory, 3)
-		copy(latestStories, story[len(story)-3:])
+		latestStories = make([]models.ResponseUserStory, 3)
+		copy(latestStories, responseStory[len(responseStory)-3:])
 	}
-	return &responseStory, likeStoryCount, nil
+	return &latestStories, likeStoryCount, nil
 }
 
 func AddStory(story *models.UserStory) (*models.UserStory, error) {
@@ -62,11 +62,19 @@ func AddStory(story *models.UserStory) (*models.UserStory, error) {
 	return story, nil
 }
 
-func AddStoryLike(likeStory *models.UserStoryLike) error {
-	tx := global.DB.Create(&likeStory)
-	if tx.RowsAffected == 0 {
-		zap.S().Info("failed to add a new story like")
-		return errors.New("failed to add a new story like")
+func AddOrRemoveStoryLike(likeStory *models.UserStoryLike) error {
+	likes := make([]models.UserStoryLike, 0)
+	if tx := global.DB.Where("like_owner_id = ? AND user_story_id = ?", likeStory.LikeOwnerId, likeStory.UserStoryId).Find(&likes); tx.RowsAffected == 0 {
+		t := global.DB.Create(&likeStory)
+		if t.RowsAffected == 0 {
+			zap.S().Info("failed to add a new story like")
+			return errors.New("failed to add a new story like")
+		}
+	} else {
+		if t := global.DB.Where("like_owner_id = ? AND user_story_id = ?", likeStory.LikeOwnerId, likeStory.UserStoryId).Delete(&likeStory); t.RowsAffected == 0 {
+			zap.S().Info("can not to delete story like")
+			return errors.New("can not to delete story like")
+		}
 	}
 	return nil
 }

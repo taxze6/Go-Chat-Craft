@@ -66,20 +66,20 @@ func AddStory(ctx *gin.Context) {
 
 func AddStoryLike(ctx *gin.Context) {
 	getData, _ := ctx.GetRawData()
-	var body map[string]string
+	var body map[string]int
 	_ = json.Unmarshal(getData, &body)
-	storyId, _ := strconv.Atoi(body["storyId"])
-	likeOwnerId, _ := strconv.Atoi(body["ownerId"])
+	storyId, _ := body["storyId"]
+	likeOwnerId, _ := body["ownerId"]
 	userStoryLike := &models.UserStoryLike{
 		UserStoryId: uint(storyId),
 		LikeOwnerId: uint(likeOwnerId),
 	}
-	err := dao.AddStoryLike(userStoryLike)
+	err := dao.AddOrRemoveStoryLike(userStoryLike)
 	if err != nil {
 		common.RespFail(ctx.Writer, "Failed to like the post!", "Failed to like the post!")
 		return
 	}
-	common.RespOk(ctx.Writer, "Successfully liked the post!", "Successfully liked the post!")
+	common.RespOk(ctx.Writer, "Successfully!", "Successfully liked the post!")
 }
 
 func AddStoryComment(ctx *gin.Context) {
