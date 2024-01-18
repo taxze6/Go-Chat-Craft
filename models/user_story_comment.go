@@ -8,6 +8,11 @@ type UserStoryComment struct {
 	Type           int    `json:"type"`
 }
 
+type ResponseUserStoryComment struct {
+	StoryComment *UserStoryComment `json:"story_comment"`
+	UserAvatar   string            `json:"user_avatar"`
+}
+
 func (table *UserStoryComment) UserStoryCommentTableName() string {
 	return "user_story_comment"
 }

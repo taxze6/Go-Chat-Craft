@@ -36,16 +36,39 @@ func GetUserShowStoryList(userId uint) (*[]models.ResponseUserStory, int, error)
 			likeStory = append(likeStory, currentLikeStory...)
 		}
 		currentCommentStory := make([]models.UserStoryComment, 0)
+		responseCommentStory := make([]models.ResponseUserStoryComment, 0)
 		if tx := global.DB.Where("user_story_id = ?", s.ID).Find(&currentCommentStory); tx.RowsAffected == 0 {
 			zap.S().Info("story like data found")
 			//return nil, 0, errors.New("story like data found")
 		}
+		// Loop through currentCommentStory
+		for _, comment := range currentCommentStory {
+			// Find the user's avatar in the user_basic table.
+			var userAvatar string
+			if err := global.DB.Table("user_basics").Select("avatar").Where("id = ?", comment.CommentOwnerId).Scan(&userAvatar).Error; err != nil {
+				zap.S().Error("Failed to get user avatar: ", err)
+
+			}
+			//由于切片中存储的是指向 comment 变量的指针，当循环结束时，responseCommentStory 中的所有元素实际上都指向了 currentCommentStory 的最后一个元素。
+			//要解决这个问题，你需要在每次迭代中创建一个新的 comment 对象
+			// Create a new comment object for each iteration
+			currentComment := comment
+			// Create a ResponseUserStoryComment object and assign values to it.
+			response := models.ResponseUserStoryComment{
+				StoryComment: &currentComment,
+				UserAvatar:   userAvatar,
+			}
+
+			// Add the response to the responseCommentStory slice.
+			responseCommentStory = append(responseCommentStory, response)
+		}
 		responseStory = append(responseStory, models.ResponseUserStory{
 			Story:         s,
 			StoryLikes:    &currentLikeStory,
-			StoryComments: &currentCommentStory,
+			StoryComments: &responseCommentStory,
 		})
 	}
+
 	likeStoryCount := len(likeStory)
 	//Get the latest three data of story.
 	var latestStories []models.ResponseUserStory
