@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
+	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 	"gopkg.in/fatih/set.v0"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -110,19 +112,31 @@ func recProc(node *Node) {
 			return
 		}
 		//Put the message body into the global channel.
-		brodMsg(data)
+		//brodMsg(data)
+		pushMsg(data)
 	}
 }
 
-var upSendChan chan []byte = make(chan []byte, 1024)
+var upSendChan chan []byte = make(chan []byte, 2048)
+var mqSendChan chan []byte = make(chan []byte, 2048)
 
 func brodMsg(data []byte) {
 	upSendChan <- data
 }
+func pushMsg(data []byte) {
+	mqSendChan <- data
+}
 
 func init() {
-	go UdpSendProc()
-	go UdpRecProc()
+	//UDP
+	//go UdpSendProc()
+	//go UdpRecProc()
+
+	//rabbitMQ
+	RabbitmqCreateExchange()
+	go RabbitmqRecProc()
+	go RabbitmqSendProc()
+
 }
 
 // The UdpSendProc completes UDP data sending by connecting to the UDP server and writing the message body from the global channel to the UDP server.
@@ -173,6 +187,166 @@ func UdpRecProc() {
 	}
 }
 
+// rabbitmq创建交换机
+func RabbitmqCreateExchange() {
+	rabbitmqUser := "guest"
+	rabbitmqPassword := "guest"
+	rabbitmqIp := "127.0.0.1"
+	rabbitmqPort := "5672"
+
+	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	zap.S().Info("Failed to connect to RabbitMQ", err)
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	zap.S().Info("Failed to open a channel", err)
+	defer ch.Close()
+	err = ch.ExchangeDeclare(
+		"chat-craft-exchange", // name
+		"fanout",              // type
+		true,                  // durable
+		false,                 // auto-deleted
+		false,                 // internal
+		false,                 // no-wait
+		nil,                   // arguments
+	)
+	zap.S().Info("Failed to declare an exchange", err)
+}
+func RabbitmqRecProc() {
+	rabbitmqUser := "guest"
+	rabbitmqPassword := "guest"
+	rabbitmqIp := "127.0.0.1"
+	rabbitmqPort := "5672"
+
+	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	defer conn.Close()
+	if err != nil {
+		zap.S().Info("连接mq失败", err)
+	} else {
+		log.Println("rabbitmq连接成功!")
+	}
+	ch, err := conn.Channel()
+	if err != nil {
+		zap.S().Info("创建mq-channel失败", err)
+	} else {
+		log.Println("创建mq-channel成功")
+	}
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"chat-craft-exchange", // name
+		"fanout",              // type
+		true,                  // durable
+		false,                 // auto-deleted
+		false,                 // internal
+		false,                 // no-wait
+		nil,                   // arguments
+	)
+	if err != nil {
+		zap.S().Info("声明交换机失败", err)
+	} else {
+		log.Println("声明交换机成功")
+	}
+	q, err := ch.QueueDeclare(
+		"chat-craft-queue-2", // name
+		false,                // durable
+		false,                // delete when unused
+		true,                 // exclusive
+		false,                // no-wait
+		nil,                  // arguments
+	)
+	if err != nil {
+		zap.S().Info("声明队列失败", err)
+	} else {
+		log.Println("声明队列成功")
+	}
+	err = ch.QueueBind(
+		q.Name,                // queue name
+		"",                    // routing key
+		"chat-craft-exchange", // exchange
+		false,
+		nil)
+	if err != nil {
+		zap.S().Info("bind到交换机失败", err)
+	} else {
+		log.Println("bind到交换机成功")
+	}
+
+	msgs, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	if err != nil {
+		zap.S().Info("消费mq消息失败", err)
+	} else {
+		log.Println("消费mq消息成功")
+	}
+	forever := make(chan bool)
+
+	go func() {
+		for d := range msgs {
+			//接收到别的机器发送来的消息
+			log.Printf(" [x] %s", d.Body)
+			dispatch(d.Body)
+		}
+	}()
+	log.Printf(" [*] Waiting for logs. To exit press CTRL+C")
+	<-forever
+}
+
+// rabbitmq发送协程
+func RabbitmqSendProc() {
+	rabbitmqUser := "guest"
+	rabbitmqPassword := "guest"
+	rabbitmqIp := "127.0.0.1"
+	rabbitmqPort := "5672"
+
+	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	zap.S().Info("Failed to connect to RabbitMQ", err)
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	zap.S().Info("Failed to open a channel", err)
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"chat-craft-exchange", // name
+		"fanout",              // type
+		true,                  // durable
+		false,                 // auto-deleted
+		false,                 // internal
+		false,                 // no-wait
+		nil,                   // arguments
+	)
+	zap.S().Info("Failed to declare an exchange", err)
+	//rabbitmq发送协程,一直读取mqsendchan,有消息之后就投递到mq
+	for {
+		select {
+		case body := <-mqSendChan:
+			//有消息被投递,则将此消息发送至交换机
+			err = ch.Publish(
+				"chat-craft-exchange", // exchange
+				"",                    // routing key
+				false,                 // mandatory
+				false,                 // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(body),
+				})
+			if err != nil {
+				zap.S().Info("Failed to publish a message", err)
+			} else {
+				log.Printf(" [x] Sent %s", body)
+			}
+		}
+	}
+}
+
 // Dispatch: Parsing the message and determining the chat type.
 func dispatch(data []byte) {
 	// 更新 data 中的时间字段
@@ -202,21 +376,6 @@ func dispatch(data []byte) {
 		sendGroupMsg(uint(msg.FormId), uint(msg.TargetId), updatedData)
 	}
 }
-
-// Sending a message to the user in a private chat.
-//func sendMsg(id int64, msg []byte) {
-//	rwlocker.Lock()
-//	node, ok := clientMap[id]
-//	rwlocker.Unlock()
-//	if !ok {
-//		zap.S().Info("There is no corresponding node for the userID.")
-//		return
-//	}
-//	zap.S().Info("targetID:", id, "node:", node)
-//	if ok {
-//		node.DataQueue <- msg
-//	}
-//}
 
 func sendGroupMsg(formId, target uint, data []byte) (int, error) {
 	//Get all users in the group, and then send a message to each user except yourself.
