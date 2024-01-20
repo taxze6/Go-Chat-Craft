@@ -212,6 +212,7 @@ func RabbitmqCreateExchange() {
 	)
 	zap.S().Info("Failed to declare an exchange", err)
 }
+
 func RabbitmqRecProc() {
 	rabbitmqUser := "guest"
 	rabbitmqPassword := "guest"

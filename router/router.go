@@ -45,7 +45,7 @@ func Router() *gin.Engine {
 
 	upload := v1.Group("upload").Use(middlewear.JWY())
 	{
-		upload.POST("/image", service.Image)
+		upload.POST("/file", service.File)
 	}
 	return router
 }
