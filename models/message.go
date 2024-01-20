@@ -20,16 +20,27 @@ import (
 
 type Message struct {
 	Model
-	MsgId       string `json:"msgId"`
-	FormId      int64  `json:"userId"`
-	TargetId    int64  `json:"targetId"`
-	Type        int    `json:"type"`
-	ContentType int    `json:"contentType"`
-	Content     string `json:"content"`
-	Pic         string `json:"pic"`
-	Url         string `json:"url"`
+	MsgId       string     `json:"msgId"`
+	FormId      int64      `json:"userId"`
+	TargetId    int64      `json:"targetId"`
+	Type        int        `json:"type"`
+	ContentType int        `json:"contentType"`
+	Content     string     `json:"content"`
+	Pic         string     `json:"pic"`
+	Url         string     `json:"url"`
+	Sound       SoundModel `json:"sound"`
 	Desc        string
 	Amount      int
+}
+
+type SoundModel struct {
+	SourceUrl string `json:"sourceUrl"`
+
+	SoundPath string `json:"soundPath"`
+
+	DataSize int `json:"dataSize"`
+
+	Duration int `json:"duration"`
 }
 
 func (m *Message) MsgTableName() string {
