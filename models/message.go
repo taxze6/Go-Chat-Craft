@@ -25,6 +25,7 @@ type Message struct {
 	TargetId    int64      `json:"targetId"`
 	Type        int        `json:"type"`
 	ContentType int        `json:"contentType"`
+	Status      int        `json:"status"`
 	Content     string     `json:"content"`
 	Pic         string     `json:"pic"`
 	Url         string     `json:"url"`
@@ -38,10 +39,27 @@ type SoundModel struct {
 
 	SoundPath string `json:"soundPath"`
 
-	DataSize int `json:"dataSize"`
+	DataSize float64 `json:"dataSize"`
 
 	Duration int `json:"duration"`
 }
+
+// CustomError is a custom error type.
+type CustomError struct {
+	message string
+}
+
+// Error implements the error interface for CustomError.
+func (e *CustomError) Error() string {
+	return e.message
+}
+
+const (
+	Sending   = 1
+	Succeeded = 2
+	Failed    = 3
+	Deleted   = 4
+)
 
 func (m *Message) MsgTableName() string {
 	return "message"
@@ -116,16 +134,73 @@ func sendProc(node *Node) {
 // then parses it, performs message type identification, and finally sends the message to the destination user's node.
 func recProc(node *Node) {
 	for {
-		//Retrieve information
+		// Retrieve information
 		_, data, err := node.Conn.ReadMessage()
 		if err != nil {
 			zap.S().Info("Failed to read the message.", err)
 			return
 		}
-		//Put the message body into the global channel.
-		//brodMsg(data)
+
+		// Put the message body into the global channel.
+		// brodMsg(data)
+		// Handle the received message
+		handleReceivedMessage(node, data)
 		pushMsg(data)
 	}
+}
+
+// handleReceivedMessage processes the received message and sends a response.
+func handleReceivedMessage(node *Node, receivedData []byte) {
+	// Your message processing logic here
+	// For demonstration, let's assume echoing the received message as a response.
+
+	// Process the received data (you can replace this with your own logic)
+	processedData, err := processReceivedData(receivedData)
+
+	if err != nil {
+		return
+	}
+	// Send a response back to the client
+	err = node.Conn.WriteMessage(websocket.TextMessage, processedData)
+	if err != nil {
+		zap.S().Info("Failed to write the response message", err)
+		return
+	}
+
+	fmt.Println("Response sent to the client.")
+}
+
+func processReceivedData(data []byte) ([]byte, error) {
+	// For demonstration, let's simply echo the received data.
+	// Update data with timestamp and status
+	var jsonData map[string]interface{}
+	err := json.Unmarshal(data, &jsonData)
+	if msgID, ok := jsonData["msgId"]; ok && msgID == "-1" {
+		// If msgId is present and equals -1, return a custom error
+		return nil, &CustomError{"Invalid msgId: -1"}
+	}
+
+	if err != nil {
+		zap.S().Info("Failed to parse JSON data.", err)
+	}
+	// Modify the data
+	jsonData["createAt"] = time.Now()
+	jsonData["status"] = Sending
+	// Marshal the updated data
+	updatedData, err := json.Marshal(jsonData)
+	if err != nil {
+		zap.S().Info("Failed to marshal JSON data.", err)
+	}
+	// Parse the updated data into a Message struct (optional)
+	msg := Message{}
+	err = json.Unmarshal(updatedData, &msg)
+	if err != nil {
+		zap.S().Info("Failed to parse the message.", err)
+	}
+	// Print the parsed data (optional)
+	fmt.Println("Parse the data:", "msg.FormId", msg.FormId, "targetId:", msg.TargetId, "type:", msg.Type, "time:", msg.CreateAt)
+	// Return the updated data
+	return updatedData, nil
 }
 
 var upSendChan chan []byte = make(chan []byte, 2048)
@@ -134,6 +209,7 @@ var mqSendChan chan []byte = make(chan []byte, 2048)
 func brodMsg(data []byte) {
 	upSendChan <- data
 }
+
 func pushMsg(data []byte) {
 	mqSendChan <- data
 }
