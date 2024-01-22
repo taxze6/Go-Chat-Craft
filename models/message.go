@@ -175,10 +175,10 @@ func processReceivedData(data []byte) ([]byte, error) {
 	// Update data with timestamp and status
 	var jsonData map[string]interface{}
 	err := json.Unmarshal(data, &jsonData)
-	if msgID, ok := jsonData["msgId"]; ok && msgID == "-1" {
-		// If msgId is present and equals -1, return a custom error
-		return nil, &CustomError{"Invalid msgId: -1"}
-	}
+	//if msgID, ok := jsonData["msgId"]; ok && msgID == "-1" {
+	//	// If msgId is present and equals -1, return a custom error
+	//	return nil, &CustomError{"Invalid msgId: -1"}
+	//}
 
 	if err != nil {
 		zap.S().Info("Failed to parse JSON data.", err)

@@ -153,8 +153,9 @@ func CheckRegisterEmailCode(ctx *gin.Context) {
 	user.Name = body["name"]
 	user.Email = body["email"]
 	password := body["password"]
+	ps, err := common.RsaDecoder(password)
 	code := body["code"]
-	err := CheckEmailCode(user.Email, code, global.Register)
+	err = CheckEmailCode(user.Email, code, global.Register)
 	if err != nil {
 		zap.S().Info("incorrect verification code")
 		common.RespFail(ctx.Writer, "Incorrect verification code!", "Incorrect verification code!")
@@ -162,7 +163,7 @@ func CheckRegisterEmailCode(ctx *gin.Context) {
 	}
 	salt := fmt.Sprintf("%d", rand.Int31())
 	//加密密码
-	user.PassWord = common.SaltPassWord(password, salt)
+	user.PassWord = common.SaltPassWord(ps, salt)
 	user.Salt = salt
 	t := time.Now()
 	user.LoginTime = &t
