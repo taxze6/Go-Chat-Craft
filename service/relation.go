@@ -15,7 +15,7 @@ func FriendList(ctx *gin.Context) {
 	users, err := dao.FriendList(uint(id))
 	if err != nil {
 		zap.S().Info("failed to retrieve friend list.", err)
-		common.RespFail(ctx.Writer, "Friend list is empty.", "Friend list is empty.")
+		common.RespOk(ctx.Writer, nil, "Friend list is empty.")
 		return
 	}
 	infos := make([]models.UserResponse, 0)

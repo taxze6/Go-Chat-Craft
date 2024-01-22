@@ -185,7 +185,7 @@ func processReceivedData(data []byte) ([]byte, error) {
 	}
 	// Modify the data
 	jsonData["createAt"] = time.Now()
-	jsonData["status"] = Sending
+	jsonData["status"] = Succeeded
 	// Marshal the updated data
 	updatedData, err := json.Marshal(jsonData)
 	if err != nil {
@@ -445,6 +445,7 @@ func dispatch(data []byte) {
 		return
 	}
 	jsonData["createAt"] = time.Now()
+	jsonData["status"] = Succeeded
 	updatedData, err := json.Marshal(jsonData)
 	if err != nil {
 		zap.S().Info("Failed to marshal JSON data.", err)
