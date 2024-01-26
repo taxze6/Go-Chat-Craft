@@ -29,9 +29,17 @@ type Message struct {
 	Content     string     `json:"content"`
 	Pic         string     `json:"pic"`
 	Url         string     `json:"url"`
+	Image       ImageModel `json:"image"`
 	Sound       SoundModel `json:"sound"`
 	Desc        string
 	Amount      int
+}
+
+type ImageModel struct {
+	ImageUrl    string  `json:"imageUrl"`
+	ImageWidth  float64 `json:"imageWidth"`
+	ImageHeight float64 `json:"imageHeight"`
+	ImageSize   float64 `json:"fileSize"`
 }
 
 type SoundModel struct {
