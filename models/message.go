@@ -222,18 +222,6 @@ func pushMsg(data []byte) {
 	mqSendChan <- data
 }
 
-func init() {
-	//UDP
-	//go UdpSendProc()
-	//go UdpRecProc()
-
-	//rabbitMQ
-	RabbitmqCreateExchange()
-	go RabbitmqRecProc()
-	go RabbitmqSendProc()
-
-}
-
 // The UdpSendProc completes UDP data sending by connecting to the UDP server and writing the message body from the global channel to the UDP server.
 func UdpSendProc() {
 	udpConn, err := net.DialUDP("udp", nil, &net.UDPAddr{
@@ -282,15 +270,26 @@ func UdpRecProc() {
 	}
 }
 
-// rabbitmq创建交换机
+// Creating an Exchange in RabbitMQ
 func RabbitmqCreateExchange() {
-	rabbitmqUser := "guest"
-	rabbitmqPassword := "guest"
-	rabbitmqIp := "127.0.0.1"
-	rabbitmqPort := "5672"
+	//rabbitmqUser := "guest"
+	//rabbitmqPassword := "guest"
+	//rabbitmqIp := "127.0.0.1"
+	//rabbitmqPort := "5672"
+	//
+	//conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
 
-	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
-	zap.S().Info("Failed to connect to RabbitMQ", err)
+	rabbitmqHost := global.ServiceConfig.RabbitMQConfig.Host
+	rabbitmqPort := global.ServiceConfig.RabbitMQConfig.Port
+	rabbitmqUser := global.ServiceConfig.RabbitMQConfig.User
+	rabbitmqPassword := global.ServiceConfig.RabbitMQConfig.Password
+
+	connString := fmt.Sprintf("amqp://%s:%s@%s:%s/", rabbitmqUser, rabbitmqPassword, rabbitmqHost, rabbitmqPort)
+	conn, err := amqp.Dial(connString)
+	if err != nil {
+		log.Println(err)
+		zap.S().Info("Failed to connect to RabbitMQ", err)
+	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
@@ -309,23 +308,25 @@ func RabbitmqCreateExchange() {
 }
 
 func RabbitmqRecProc() {
-	rabbitmqUser := "guest"
-	rabbitmqPassword := "guest"
-	rabbitmqIp := "127.0.0.1"
-	rabbitmqPort := "5672"
-
-	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	//rabbitmqUser := "guest"
+	//rabbitmqPassword := "guest"
+	//rabbitmqIp := "127.0.0.1"
+	//rabbitmqPort := "5672"
+	//
+	//conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	connString := fmt.Sprintf("amqp://%s:%s@%s:%s/", global.ServiceConfig.RabbitMQConfig.User, global.ServiceConfig.RabbitMQConfig.Password, global.ServiceConfig.RabbitMQConfig.Host, global.ServiceConfig.RabbitMQConfig.Port)
+	conn, err := amqp.Dial(connString)
 	defer conn.Close()
 	if err != nil {
-		zap.S().Info("连接mq失败", err)
+		zap.S().Info("Failed to connect to the message queue.", err)
 	} else {
-		log.Println("rabbitmq连接成功!")
+		log.Println("Successfully connected to RabbitMQ!")
 	}
 	ch, err := conn.Channel()
 	if err != nil {
-		zap.S().Info("创建mq-channel失败", err)
+		zap.S().Info("Failed to create the MQ channel.", err)
 	} else {
-		log.Println("创建mq-channel成功")
+		log.Println("Successfully created the MQ channel.")
 	}
 	defer ch.Close()
 
@@ -339,9 +340,9 @@ func RabbitmqRecProc() {
 		nil,                   // arguments
 	)
 	if err != nil {
-		zap.S().Info("声明交换机失败", err)
+		zap.S().Info("Failed to declare the exchange.", err)
 	} else {
-		log.Println("声明交换机成功")
+		log.Println("Successfully declared the exchange.")
 	}
 	q, err := ch.QueueDeclare(
 		"chat-craft-queue-2", // name
@@ -352,9 +353,9 @@ func RabbitmqRecProc() {
 		nil,                  // arguments
 	)
 	if err != nil {
-		zap.S().Info("声明队列失败", err)
+		zap.S().Info("Failed to declare the queue.", err)
 	} else {
-		log.Println("声明队列成功")
+		log.Println("Successfully declared the queue.")
 	}
 	err = ch.QueueBind(
 		q.Name,                // queue name
@@ -363,9 +364,9 @@ func RabbitmqRecProc() {
 		false,
 		nil)
 	if err != nil {
-		zap.S().Info("bind到交换机失败", err)
+		zap.S().Info("Failed to bind to the exchange.", err)
 	} else {
-		log.Println("bind到交换机成功")
+		log.Println("Successfully bound")
 	}
 
 	msgs, err := ch.Consume(
@@ -378,9 +379,9 @@ func RabbitmqRecProc() {
 		nil,    // args
 	)
 	if err != nil {
-		zap.S().Info("消费mq消息失败", err)
+		zap.S().Info("Failed to consume the MQ message.", err)
 	} else {
-		log.Println("消费mq消息成功")
+		log.Println("Successfully consumed the MQ message.")
 	}
 	forever := make(chan bool)
 
@@ -397,17 +398,22 @@ func RabbitmqRecProc() {
 
 // rabbitmq发送协程
 func RabbitmqSendProc() {
-	rabbitmqUser := "guest"
-	rabbitmqPassword := "guest"
-	rabbitmqIp := "127.0.0.1"
-	rabbitmqPort := "5672"
-
-	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
-	zap.S().Info("Failed to connect to RabbitMQ", err)
+	//rabbitmqUser := "guest"
+	//rabbitmqPassword := "guest"
+	//rabbitmqIp := "127.0.0.1"
+	//rabbitmqPort := "5672"
+	//conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqIp + ":" + rabbitmqPort + "/")
+	connString := fmt.Sprintf("amqp://%s:%s@%s:%s/", global.ServiceConfig.RabbitMQConfig.User, global.ServiceConfig.RabbitMQConfig.Password, global.ServiceConfig.RabbitMQConfig.Host, global.ServiceConfig.RabbitMQConfig.Port)
+	conn, err := amqp.Dial(connString)
+	if err != nil {
+		zap.S().Info("Failed to connect to RabbitMQ", err)
+	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	zap.S().Info("Failed to open a channel", err)
+	if err != nil {
+		zap.S().Info("Failed to open a channel", err)
+	}
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
@@ -419,12 +425,15 @@ func RabbitmqSendProc() {
 		false,                 // no-wait
 		nil,                   // arguments
 	)
-	zap.S().Info("Failed to declare an exchange", err)
-	//rabbitmq发送协程,一直读取mqsendchan,有消息之后就投递到mq
+
+	if err != nil {
+		zap.S().Info("Failed to declare an exchange", err)
+	}
+	//RabbitMQ Coroutine for Sending: Continuously read from mqsendchan and deliver the message to MQ when there is a message.
 	for {
 		select {
 		case body := <-mqSendChan:
-			//有消息被投递,则将此消息发送至交换机
+			//If a message is delivered, send this message to the exchange.
 			err = ch.Publish(
 				"chat-craft-exchange", // exchange
 				"",                    // routing key
@@ -445,7 +454,7 @@ func RabbitmqSendProc() {
 
 // Dispatch: Parsing the message and determining the chat type.
 func dispatch(data []byte) {
-	// 更新 data 中的时间字段
+	// Update the time field in the data.
 	var jsonData map[string]interface{}
 	err := json.Unmarshal(data, &jsonData)
 	if err != nil {

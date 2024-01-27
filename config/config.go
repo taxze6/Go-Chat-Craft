@@ -14,9 +14,17 @@ type RedisConfig struct {
 	Port int    `mapstructure:"port" json:"port"`
 }
 
+type RabbitMQConfig struct {
+	Host     string `mapstructure:"host" json:"host"`
+	Port     string `mapstructure:"port" json:"port"`
+	User     string `mapstructure:"user" json:"user"`
+	Password string `mapstructure:"password" json:"password"`
+}
+
 // 对应yaml文件结构
 type ServiceConfig struct {
-	Port    int         `mapstructure:"port" json:"port"`
-	DB      MysqlConfig `mapstructure:"mysql" json:"mysql"`
-	RedisDB RedisConfig `mapstructure:"redis" json:"redis"`
+	Port           int            `mapstructure:"port" json:"port"`
+	DB             MysqlConfig    `mapstructure:"mysql" json:"mysql"`
+	RedisDB        RedisConfig    `mapstructure:"redis" json:"redis"`
+	RabbitMQConfig RabbitMQConfig `mapstructure:"rabbitmq" json:"rabbitmq"`
 }
