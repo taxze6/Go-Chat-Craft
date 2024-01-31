@@ -26,6 +26,7 @@ func Router() *gin.Engine {
 		user.POST("/add_story", middlewear.JWY(), service.AddStory)
 		user.POST("/add_story_like", middlewear.JWY(), service.AddStoryLike)
 		user.POST("/add_story_comment", middlewear.JWY(), service.AddStoryComment)
+		user.POST("/user_info_update", middlewear.JWY(), service.UpdateUser)
 	}
 	relation := v1.Group("relation").Use(middlewear.JWY())
 	{

@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -285,4 +286,63 @@ func FindUserWithUserName(ctx *gin.Context) {
 		ClientPort: userInfo.ClientPort,
 	}
 	common.RespOk(ctx.Writer, reUserInfo, "The user has been found.")
+}
+
+func UpdateUser(ctx *gin.Context) {
+	userId, _ := strconv.Atoi(ctx.GetHeader("UserId"))
+	getData, _ := ctx.GetRawData()
+	var body map[string]string
+	_ = json.Unmarshal(getData, &body)
+	avatar := body["avatar"]
+	motto := body["motto"]
+	name := body["name"]
+	phone := body["phone"]
+	email := body["email"]
+	encryptionPassword := body["password"]
+	encryptionNewPassword := body["newPassword"]
+	password, err := common.RsaDecoder(encryptionPassword)
+	newPassword, err := common.RsaDecoder(encryptionNewPassword)
+	if err != nil {
+		zap.S().Info("Cryptographic error")
+		common.RespFail(ctx.Writer, "Cryptographic error!", "Cryptographic error!")
+		return
+	}
+	userInfo, err := dao.FindUserId(uint(userId))
+	if userInfo.Avatar != avatar {
+		userInfo.Avatar = avatar
+	}
+
+	if userInfo.Motto != motto {
+		userInfo.Motto = motto
+	}
+
+	if userInfo.Name != name {
+		data, _ := dao.FindUserByName(name)
+		if data != nil {
+			common.RespFail(ctx.Writer, "The user name already exists!", "The user name already exists!")
+			return
+		}
+		userInfo.Name = name
+	}
+
+	if userInfo.Phone != phone {
+		userInfo.Phone = phone
+	}
+
+	if userInfo.Email != email {
+		userInfo.Email = email
+	}
+	ok := common.CheckPassWord(password, userInfo.Salt, userInfo.PassWord)
+	if !ok {
+		common.RespFail(ctx.Writer, "The old password is incorrect.", "The old password is incorrect.")
+		return
+	}
+	userInfo.PassWord = common.SaltPassWord(newPassword, userInfo.Salt)
+	newUserInfo, err := dao.UpdateUser(*userInfo)
+	if err != nil {
+		common.RespFail(ctx.Writer, "Fail to modify.", "Fail to modify.")
+		return
+	}
+
+	common.RespOk(ctx.Writer, newUserInfo, "The account information is successfully modified!")
 }
