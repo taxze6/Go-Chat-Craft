@@ -24,6 +24,7 @@ type RabbitMQConfig struct {
 // 对应yaml文件结构
 type ServiceConfig struct {
 	Port           int            `mapstructure:"port" json:"port"`
+	Host           string         `mapstructure:"host" json:"host"`
 	DB             MysqlConfig    `mapstructure:"mysql" json:"mysql"`
 	RedisDB        RedisConfig    `mapstructure:"redis" json:"redis"`
 	RabbitMQConfig RabbitMQConfig `mapstructure:"rabbitmq" json:"rabbitmq"`

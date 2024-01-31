@@ -10,6 +10,7 @@ import (
 )
 
 func RsaDecoder(data string) (string, error) {
+	//privateKeyPEM, err := os.ReadFile("./private.pem")
 	privateKeyPEM, err := os.ReadFile("common/private.pem")
 	if err != nil {
 		return "", errors.New("unable to read private key file")

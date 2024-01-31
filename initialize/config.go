@@ -10,8 +10,8 @@ func InitConfig() {
 	//Instantiate an object
 	v := viper.New()
 
-	configFile := "../GoChatCraft/config-release.yaml"
-
+	//configFile := "./config-release.yaml"
+	configFile := "../GoChatCraft/config-debug.yaml"
 	//Read configuration file
 	v.SetConfigFile(configFile)
 

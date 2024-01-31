@@ -2,11 +2,13 @@ package service
 
 import (
 	"GoChatCraft/common"
+	"GoChatCraft/global"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -53,6 +55,6 @@ func File(ctx *gin.Context) {
 	if err != nil {
 		common.RespFail(w, err.Error(), "Upload failed.")
 	}
-	url := "http://192.168.31.123:8889/assets/upload/" + folderName + fileName
+	url := "http://" + global.ServiceConfig.Host + ":" + strconv.Itoa(global.ServiceConfig.Port) + "/assets/upload/" + folderName + fileName
 	common.RespOk(w, url, "Sent successfully.")
 }
