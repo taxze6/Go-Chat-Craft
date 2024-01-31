@@ -298,15 +298,6 @@ func UpdateUser(ctx *gin.Context) {
 	name := body["name"]
 	phone := body["phone"]
 	email := body["email"]
-	encryptionPassword := body["password"]
-	encryptionNewPassword := body["newPassword"]
-	password, err := common.RsaDecoder(encryptionPassword)
-	newPassword, err := common.RsaDecoder(encryptionNewPassword)
-	if err != nil {
-		zap.S().Info("Cryptographic error")
-		common.RespFail(ctx.Writer, "Cryptographic error!", "Cryptographic error!")
-		return
-	}
 	userInfo, err := dao.FindUserId(uint(userId))
 	if userInfo.Avatar != avatar {
 		userInfo.Avatar = avatar
@@ -332,6 +323,30 @@ func UpdateUser(ctx *gin.Context) {
 	if userInfo.Email != email {
 		userInfo.Email = email
 	}
+	newUserInfo, err := dao.UpdateUser(*userInfo)
+	if err != nil {
+		common.RespFail(ctx.Writer, "Fail to modify.", "Fail to modify.")
+		return
+	}
+
+	common.RespOk(ctx.Writer, newUserInfo, "The account information is successfully modified!")
+}
+
+func UpdateUserPassword(ctx *gin.Context) {
+	userId, _ := strconv.Atoi(ctx.GetHeader("UserId"))
+	getData, _ := ctx.GetRawData()
+	var body map[string]string
+	_ = json.Unmarshal(getData, &body)
+	encryptionPassword := body["password"]
+	encryptionNewPassword := body["newPassword"]
+	password, err := common.RsaDecoder(encryptionPassword)
+	newPassword, err := common.RsaDecoder(encryptionNewPassword)
+	if err != nil {
+		zap.S().Info("Cryptographic error")
+		common.RespFail(ctx.Writer, "Cryptographic error!", "Cryptographic error!")
+		return
+	}
+	userInfo, err := dao.FindUserId(uint(userId))
 	ok := common.CheckPassWord(password, userInfo.Salt, userInfo.PassWord)
 	if !ok {
 		common.RespFail(ctx.Writer, "The old password is incorrect.", "The old password is incorrect.")
