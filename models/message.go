@@ -153,7 +153,18 @@ func recProc(node *Node) {
 		// brodMsg(data)
 		// Handle the received message
 		handleReceivedMessage(node, data)
-		pushMsg(data)
+		var jsonData map[string]interface{}
+		err = json.Unmarshal(data, &jsonData)
+
+		if err != nil {
+			zap.S().Info("Failed to parse JSON data.", err)
+		}
+		msgID := jsonData["msgId"]
+		if msgID == "-1" {
+			//This is a heartbeat message not stored in Redis
+		} else {
+			pushMsg(data)
+		}
 	}
 }
 
@@ -512,28 +523,33 @@ func sendMsgAndSave(userId int64, msg []byte) {
 		//If the current user is online, forward the message to the current user's WebSocket connection and then store it.
 		node.DataQueue <- msg
 	}
-	//Concatenate userIdStr and targetIdStr to create a unique key.
-	var key string
-	if userId > jsonMsg.FormId {
-		key = "msg_" + userIdStr + "_" + targetIdStr
+	msgID := jsonMsg.MsgId
+	if msgID == "typingId" {
+		//This is an input status message and is not stored in Redis
 	} else {
-		key = "msg_" + targetIdStr + "_" + userIdStr
+		//Concatenate userIdStr and targetIdStr to create a unique key.
+		var key string
+		if userId > jsonMsg.FormId {
+			key = "msg_" + userIdStr + "_" + targetIdStr
+		} else {
+			key = "msg_" + targetIdStr + "_" + userIdStr
+		}
+		fmt.Println(key)
+		//
+		res, err := global.RedisDB.ZRevRange(ctx, key, 0, -1).Result()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		//Write the chat records into Redis cache.
+		score := float64(cap(res)) + 1
+		ress, e := global.RedisDB.ZAdd(ctx, key, &redis.Z{Score: score, Member: msg}).Result()
+		if e != nil {
+			zap.S().Info(e)
+			return
+		}
+		fmt.Println(ress)
 	}
-	fmt.Println(key)
-	//
-	res, err := global.RedisDB.ZRevRange(ctx, key, 0, -1).Result()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//Write the chat records into Redis cache.
-	score := float64(cap(res)) + 1
-	ress, e := global.RedisDB.ZAdd(ctx, key, &redis.Z{Score: score, Member: msg}).Result()
-	if e != nil {
-		zap.S().Info(e)
-		return
-	}
-	fmt.Println(ress)
 }
 
 // isRev is a boolean parameter used to indicate whether to retrieve chat records from the cache in reverse order (from largest to smallest).
