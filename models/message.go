@@ -20,19 +20,22 @@ import (
 
 type Message struct {
 	Model
-	MsgId       string     `json:"msgId"`
-	FormId      int64      `json:"userId"`
-	TargetId    int64      `json:"targetId"`
-	Type        int        `json:"type"`
-	ContentType int        `json:"contentType"`
-	Status      int        `json:"status"`
-	Content     string     `json:"content"`
-	Pic         string     `json:"pic"`
-	Url         string     `json:"url"`
-	Image       ImageModel `json:"image"`
-	Sound       SoundModel `json:"sound"`
-	Desc        string
-	Amount      int
+	MsgId                string     `json:"msgId"`
+	FormId               int64      `json:"userId"`
+	TargetId             int64      `json:"targetId"`
+	Type                 int        `json:"type"`
+	ContentType          int        `json:"contentType"`
+	Status               int        `json:"status"`
+	Content              string     `json:"content"`
+	MessageSenderName    string     `json:"messageSenderName"`
+	MessageSenderFaceUrl string     `json:"messageSenderFaceUrl"`
+	Pic                  string     `json:"pic"`
+	Url                  string     `json:"url"`
+	Image                ImageModel `json:"image"`
+	Sound                SoundModel `json:"sound"`
+	QuoteMessage         *Message   `json:"quoteMessage"`
+	Desc                 string
+	Amount               int
 }
 
 type ImageModel struct {
