@@ -10,7 +10,7 @@ func GetEmailCode(mailTo string, from string) error {
 		MailHost: "smtp.qq.com",
 		MailPort: 465,
 		MailUser: "1929509811@qq.com",
-		MailPass: "erxdycnbcbjrbcfg",
+		MailPass: "aqvgewdgxhygdecf",
 		MailTo:   mailTo,
 		Subject:  "chat craft email code test",
 		Body:     "",
