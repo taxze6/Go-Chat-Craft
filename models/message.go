@@ -311,7 +311,7 @@ func RabbitmqCreateExchange() {
 	defer ch.Close()
 	err = ch.ExchangeDeclare(
 		"chat-craft-exchange", // name
-		"fanout",              // type
+		"fanout",              // typed
 		true,                  // durable
 		false,                 // auto-deleted
 		false,                 // internal
