@@ -45,9 +45,10 @@ func Router() *gin.Engine {
 		message.POST("/get_redis_msg", service.GetRedisMsg)
 	}
 
-	upload := v1.Group("upload").Use(middlewear.JWY())
+	upload := v1.Group("upload")
 	{
-		upload.POST("/file", service.File)
+		upload.POST("/file", middlewear.JWY(), service.File)
+		upload.GET("/getEmojiZip", service.DownloadEmojiZip)
 	}
 	return router
 }
