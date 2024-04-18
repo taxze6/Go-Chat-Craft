@@ -34,6 +34,7 @@ type Message struct {
 	Image                ImageModel `json:"image"`
 	Sound                SoundModel `json:"sound"`
 	QuoteMessage         *Message   `json:"quoteMessage"`
+	ReplyEmojis          []string   `json:"replyEmojis"`
 	Desc                 string
 	Amount               int
 }
